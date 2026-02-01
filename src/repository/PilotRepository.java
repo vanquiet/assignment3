@@ -8,7 +8,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PilotRepository {
+public class PilotRepository implements CrudRepository<Pilot> {
 
     public Pilot create(Pilot p) {
         String sql = "INSERT INTO pilots(name, license_code, active) VALUES(?,?,?) RETURNING id";

@@ -8,9 +8,11 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import static jdk.internal.org.jline.utils.Colors.s;
+
 public class ShipRepository {
 
-    public Ship create(Ship s) {
+    public class ShipRepository implements CrudRepository<Ship> {
         String sql = "INSERT INTO ships(name, fuel_level, status) VALUES(?,?,?) RETURNING id";
         try (Connection c = DatabaseConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
