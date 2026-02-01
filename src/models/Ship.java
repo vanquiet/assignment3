@@ -1,34 +1,68 @@
 package models;
 
-import exceptions.InvalidInputException;
-import interfaces.FuelConsumable;
 import interfaces.ReadyCheck;
 
-public class Ship extends BaseEntity implements ReadyCheck, FuelConsumable {
-    public static final String DOCKED = "DOCKED";
+public class Ship extends BaseEntity implements ReadyCheck {
 
     private double fuelLevel;
     private String status;
 
+    public Ship() {
+    }
+
     public Ship(int id, String name, double fuelLevel, String status) {
-        super(id, name);
+        this.id = id;
+        this.name = name;
         this.fuelLevel = fuelLevel;
         this.status = status;
     }
 
-    @Override public void validate() {
-        if (name == null || name.trim().isEmpty()) throw new InvalidInputException("ship name required");
-        if (fuelLevel < 0) throw new InvalidInputException("fuel must be >= 0");
-        if (status == null || status.trim().isEmpty()) throw new InvalidInputException("status required");
+    @Override
+    public String getType() {
+        return "SHIP";
     }
 
-    @Override public String getType() { return "SHIP"; }
-    @Override public boolean isReady() { return DOCKED.equalsIgnoreCase(status); }
-    @Override public double fuelNeeded(double km) { return km * 0.5; }
+    @Override
+    public void validate() {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("ship name required");
+        }
+        if (fuelLevel < 0) {
+            throw new IllegalArgumentException("fuel level must be >= 0");
+        }
+        if (status == null || status.isBlank()) {
+            throw new IllegalArgumentException("status required");
+        }
+    }
 
-    public double getFuelLevel() { return fuelLevel; }
-    public void setFuelLevel(double fuelLevel) { this.fuelLevel = fuelLevel; }
+    public double fuelNeeded(double distanceKm) {
+        return distanceKm;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public double getFuelLevel() {
+        return fuelLevel;
+    }
+
+    public void setFuelLevel(double fuelLevel) {
+        this.fuelLevel = fuelLevel;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    @Override
+    public boolean isReady() {
+        return "DOCKED".equalsIgnoreCase(status) && fuelLevel > 0;
+    }
+
+    @Override
+    public String toString() {
+        return shortInfo();
+    }
 }
+

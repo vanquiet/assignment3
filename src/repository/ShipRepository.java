@@ -1,109 +1,113 @@
 package repository;
 
 import db.DatabaseConnection;
-import exceptions.DatabaseOperationException;
 import models.Ship;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.List; //
+import java.util.List;
 
-import static jdk.internal.org.jline.utils.Colors.s;
+public class ShipRepository implements CrudRepository<Ship> {
 
-public class ShipRepository {
+    private final Connection conn;
 
-    public class ShipRepository implements CrudRepository<Ship> {
-        String sql = "INSERT INTO ships(name, fuel_level, status) VALUES(?,?,?) RETURNING id";
-        try (Connection c = DatabaseConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+    public ShipRepository() {
+        this.conn = DatabaseConnection.getConnection();
+    }
 
-            ps.setString(1, s.getName());
-            ps.setDouble(2, s.getFuelLevel());
-            ps.setString(3, s.getStatus());
+    @Override
+    public Ship create(Ship ship) {
+        String sql = "INSERT INTO ships(name, fuel_level, status) VALUES (?, ?, ?) RETURNING id";
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) s.setId(rs.getInt(1));
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, ship.getName());
+            ps.setDouble(2, ship.getFuelLevel());   // 🔥 double
+            ps.setString(3, ship.getStatus());
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                ship.setId(rs.getInt("id"));
+                return ship;
             }
-            return s;
+            return null;
 
         } catch (SQLException e) {
-            throw new DatabaseOperationException("create ship failed", e);
+            throw new RuntimeException("create ship failed", e);
         }
     }
 
+    @Override
     public Ship getById(int id) {
-        String sql = "SELECT id, name, fuel_level, status FROM ships WHERE id=?";
-        try (Connection c = DatabaseConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        String sql = "SELECT * FROM ships WHERE id = ?";
 
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return null;
-                return new Ship(
-                        rs.getInt("id"),
-                        rs.getString("name"),
-                        rs.getDouble("fuel_level"),
-                        rs.getString("status")
-                );
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return map(rs);
             }
+            return null;
 
         } catch (SQLException e) {
-            throw new DatabaseOperationException("get ship failed", e);
+            throw new RuntimeException("get ship failed", e);
         }
     }
 
+    @Override
     public List<Ship> getAll() {
-        String sql = "SELECT id, name, fuel_level, status FROM ships ORDER BY id";
         List<Ship> list = new ArrayList<>();
+        String sql = "SELECT * FROM ships";
 
-        try (Connection c = DatabaseConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
 
             while (rs.next()) {
-                list.add(new Ship(
-                        rs.getInt("id"),
-                        rs.getString("name"),
-                        rs.getDouble("fuel_level"),
-                        rs.getString("status")
-                ));
+                list.add(map(rs));
             }
-            return list;
 
         } catch (SQLException e) {
-            throw new DatabaseOperationException("get all ships failed", e);
+            throw new RuntimeException("get ships failed", e);
         }
+        return list;
     }
 
-    public boolean update(int id, Ship s) {
+    @Override
+    public boolean update(int id, Ship ship) {
         String sql = "UPDATE ships SET name=?, fuel_level=?, status=? WHERE id=?";
-        try (Connection c = DatabaseConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
 
-            ps.setString(1, s.getName());
-            ps.setDouble(2, s.getFuelLevel());
-            ps.setString(3, s.getStatus());
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, ship.getName());
+            ps.setDouble(2, ship.getFuelLevel());   // 🔥 double
+            ps.setString(3, ship.getStatus());
             ps.setInt(4, id);
 
-            return ps.executeUpdate() == 1;
+            return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            throw new DatabaseOperationException("update ship failed", e);
+            throw new RuntimeException("update ship failed", e);
         }
     }
 
+    @Override
     public boolean delete(int id) {
         String sql = "DELETE FROM ships WHERE id=?";
-        try (Connection c = DatabaseConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
 
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
-            return ps.executeUpdate() == 1;
+            return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            throw new DatabaseOperationException("delete ship failed", e);
+            throw new RuntimeException("delete ship failed", e);
         }
     }
-}
 
+    private Ship map(ResultSet rs) throws SQLException {
+        Ship s = new Ship();
+        s.setId(rs.getInt("id"));
+        s.setName(rs.getString("name"));
+        s.setFuelLevel(rs.getDouble("fuel_level")); // 🔥 double
+        s.setStatus(rs.getString("status"));
+        return s;
+    }
+}

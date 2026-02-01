@@ -1,9 +1,11 @@
 package controller;
 
+import interfaces.Printable;
 import repository.PilotRepository;
 import repository.ShipRepository;
 import service.PilotService;
 import service.ShipService;
+import util.ReflectionUtils;
 
 public class Main {
 
@@ -15,6 +17,16 @@ public class Main {
         ShipService shipService =
                 new ShipService(new ShipRepository());
 
-        System.out.println("Assignment 4 setup OK");
+        Printable.header("LAMBDA");
+        var pilots = pilotService.getAll();
+        pilots.sort((a, b) -> a.getName().compareTo(b.getName()));
+        System.out.println(pilots);
+
+        Printable.header("REFLECTION");
+        if (!pilots.isEmpty()) {
+            ReflectionUtils.printInfo(pilots.get(0));
+        }
+
     }
 }
+
